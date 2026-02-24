@@ -1,0 +1,23 @@
+start_scene: entrance
+initial_hp: 10
+
+scenes:
+  - id: entrance
+    title: Porte Principale
+    text: "..."
+    choices:
+      - label: Entrer
+        next: hall
+
+  - id: hall
+    title: Hall
+    text: "..."
+    choices:
+      - label: Monter
+        next: roof
+        required_item: badge
+
+  - id: roof
+    title: Toit
+    text: "..."
+    ending: victory
