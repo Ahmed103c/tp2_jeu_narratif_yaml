@@ -1,28 +1,11 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Choice {
-    pub label: String,
-    pub next: String,
-    pub required_item: Option<String>, 
-}
+use crate::story::Story;
+use crate::game::*;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Scene {
-    pub id: String,
-    pub title: String,
-    pub text: String,
-    pub choices: Option<Vec<Choice>>,
-    pub ending: Option<String>,       
-}
+pub mod story;
+pub mod game;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Story {
-    pub start_scene: String,
-    pub initial_hp: u32,
-    pub scenes: Vec<Scene>,
-}
 
 pub fn validate_story(story: &Story) -> Result<(), Vec<String>> {
     let mut errors = Vec::new();
@@ -66,4 +49,26 @@ pub fn validate_story(story: &Story) -> Result<(), Vec<String>> {
     } else {
         Err(errors)
     }
+}
+
+pub fn parse_command(line :&str) -> Result<Box<dyn GameCommand>,ParseError>{
+    let mut parts = line.split_whitespace();
+    let command = parts.next(); 
+    let arg = parts.next();     
+
+    match command {
+        Some("look") =>Ok(Box::new(LookCommand)),
+        Some("inventory")=>{Ok(Box::new(InventoryCommand))}
+        Some("status")=>{Ok(Box::new(StatusCommand))}
+        Some("quit")=>{Ok(Box::new(QuitCommand))}
+        Some("choose") => {
+            match arg {
+                Some(n) => Ok(Box::new(ChooseCommand { n: n.parse().map_err(|_| ParseError::InvalidArg)? })),
+                None => Err(ParseError::MissingValueForChooseCommand)
+            }
+        }
+        None => Err(ParseError::MissingCommand),
+        _ => Err(ParseError::UnknownCommand)
+    }
+
 }
