@@ -1,26 +1,34 @@
 use crate::Story;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum GameStatus {
     Playing,
     Win,
     GameOver,
 }
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct GameState{
     pub current_scene_id: String,
     pub hp: u32,
     pub inventory: Vec<String>,
     pub status: GameStatus,
 }
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum GameError {
     SceneNotFound,
     NoChoicesAvailable,
     InvalidChoice,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CommandOutcome {
     Display(String),  
     Quit,             
-    SceneChanged,     
+    SceneChanged,
+    Win,
+    GameOver,  
 }
 
 pub trait GameCommand {
@@ -114,4 +122,34 @@ pub enum ParseError {
     MissingValueForChooseCommand,
     InvalidArg,
 }
+
+
+pub fn run_command(command: Box<dyn GameCommand>, story: &Story, state: &mut GameState) -> Result<CommandOutcome, GameError> {
+    let outcome = command.execute(story, state)?;
+
+    match &outcome {
+        CommandOutcome::SceneChanged => {
+            // Vérifier victoire
+            let current_scene = story.scenes.iter()
+                .find(|s| s.id == state.current_scene_id);
+            
+            if let Some(scene) = current_scene {
+                if scene.ending.is_some() {
+                    state.status = GameStatus::Win;
+                    return Ok(CommandOutcome::Win);
+                }
+            }
+
+            // Vérifier GameOver
+            if state.hp == 0 {
+                state.status = GameStatus::GameOver;
+                return Ok(CommandOutcome::GameOver);
+            }
+        }
+        _ => {}
+    }
+
+    Ok(outcome)
+}
+
 

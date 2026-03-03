@@ -40,25 +40,19 @@ fn main() {
             Err(ParseError::MissingCommand) => println!("Entrez une commande !"),
             Err(ParseError::MissingValueForChooseCommand) => println!("choose nécessite un numéro ex: choose 2"),
             Err(ParseError::InvalidArg) => println!("Argument invalide !"),
-            Ok(command) => {
-                match command.execute(&scene, &mut state) {
+           Ok(command) => {
+                match run_command(command, &scene, &mut state) {
                     Ok(CommandOutcome::Display(msg)) => println!("{}", msg),
-                    Ok(CommandOutcome::Quit) => {
-                        println!("Au revoir !");
-                        break;
-                    }
+                    Ok(CommandOutcome::Quit) => { println!("Au revoir !"); break; }
+                    Ok(CommandOutcome::Win) => { println!("Vous avez gagné !"); break; }
+                    Ok(CommandOutcome::GameOver) => { println!("Game Over !"); break; }
                     Ok(CommandOutcome::SceneChanged) => {
-                        // vérifier win/gameover
-                        if state.hp == 0 {
-                            state.status = GameStatus::GameOver;
-                            println!("Game Over !");
-                            break;
+                        if let Ok(CommandOutcome::Display(msg)) = LookCommand.execute(&scene, &mut state) {
+                            println!("{}", msg);
                         }
-                        // afficher la nouvelle scène
-                        let _ = LookCommand.execute(&scene, &mut state);
                     }
-                    Err(GameError::SceneNotFound) => eprintln!("Erreur : scène introuvable !"),
-                    Err(GameError::NoChoicesAvailable) => println!("Pas de choix disponibles ici."),
+                    Err(GameError::SceneNotFound) => eprintln!("Scène introuvable !"),
+                    Err(GameError::NoChoicesAvailable) => println!("Pas de choix disponibles."),
                     Err(GameError::InvalidChoice) => println!("Ce choix n'existe pas !"),
                 }
             }
